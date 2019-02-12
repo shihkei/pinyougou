@@ -90,4 +90,14 @@ public class BrandController {
             return new Result(false, "删除失败");
         }
     }
+    /**
+     * 模糊查询
+     * @param brand page size
+     * @return
+     */
+    @RequestMapping("search")
+    public PageResult search(@RequestBody TbBrand brand,int page, int size){
+
+        return  brandService.findPage(brand,page,size);
+    }
 }

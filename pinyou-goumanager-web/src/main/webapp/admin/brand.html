@@ -19,32 +19,42 @@
 	<script src="../plugins/angularjs/pagination.js"></script>
     <script type="text/javascript">
 		var app=angular.module('pinyougou', ['pagination']);//定义模块
-		app.controller('brandController' ,function($scope,$http){
+		//品牌服务层
+		app.service('brandService',function ($http) {
+			this.findAll = function () {
+				return $http.get("../brand/findAll.do");
+			}
+			this.findPage = function (page,rows) {
+				return $http.get("../brand/findPage.do?page="+page+"&size="+rows)
+			}
+			this.findOne = function (id) {
+				return $http.post("../brand/findOne.do?id="+id)
+			}
+			this.add = function (entity) {
+				return $http.post("../brand/add.do",entity)
+			}
+			this.update = function (entity) {
+				return $http.post("../brand/update.do",entity)
+			}
+			this.dele = function (ids) {
+				return $http.post("../brand/delete.do?ids="+ids )
+			}
+			this.search = function (page,rows,searchEntity) {
+				return $http.post("../brand/search.do?page="+page+"&size="+rows,searchEntity)
+			}
+		})
+		app.controller('brandController' ,function($scope,$http,brandService){
 			//读取列表数据绑定到表单中
 			$scope.findAll=function(){
-				$http.get("../brand/findAll.do").success(
+				brandService.finall().success(
 						function(response){
 							$scope.list=response;
 						}
 				);
 			};
-			//分页控件配置 
-			$scope.paginationConf = {
-				currentPage: 1,
-				totalItems: 10,
-				itemsPerPage: 10,
-				perPageOptions: [10, 20, 30, 40, 50],
-				onChange: function(){
-					$scope.reloadList();//重新加载
-				}
-			};
-			//加载数据
-			$scope.reloadList= function () {
-				$scope.findPage($scope.paginationConf.currentPage,$scope.paginationConf.itemsPerPage)
-			};
 			//分页查询
 			$scope.findPage = function (page,rows) {
-				$http.get("../brand/findPage.do?page="+page+"&size="+rows).success(
+				brandService.findPage(page,rows).success(
 						function (response) {
 							$scope.list = response.rows;
 							$scope.paginationConf.totalItems=response.total;
@@ -53,12 +63,13 @@
 			};
 			
 			$scope.save = function () {
-
-				var methodName='add';//方法名称
+				var object = null
 				if($scope.entity.id!=null){//如果有ID
-					methodName='update';//则执行修改方法
+					object=brandService.update($scope.entity);//则执行修改方法
+				}else {
+					object=brandService.add($scope.entity);
 				}
-				$http.post("../brand/"+methodName+".do",$scope.entity).success(
+				object.success(
 						function (response) {
 							if (response.success) {
 								$scope.reloadList();//重新加载
@@ -69,20 +80,20 @@
 				)
 			};
 
-			$scope.update = function () {
-				$http.post("../brand/update.do",$scope.entity).success(
-						function (response) {
-							if (response.success) {
-								$scope.reloadList();//重新加载
-							}else {
-								alert(response.message)
-							}
-						}
-				)
-			};
+			// $scope.update = function () {
+			// 	$http.post("../brand/update.do",$scope.entity).success(
+			// 			function (response) {
+			// 				if (response.success) {
+			// 					$scope.reloadList();//重新加载
+			// 				}else {
+			// 					alert(response.message)
+			// 				}
+			// 			}
+			// 	)
+			// };
 
 			$scope.findOne = function (id) {
-				$http.post("../brand/findOne.do?id="+id).success(
+				brandService.findOne(id).success(
 						function (response) {
 							$scope.entity = response;
 						}
@@ -97,8 +108,9 @@
 					$scope.selectIds.splice(index,1);
 				}
 			};
+			//批量删除
 			$scope.dele = function () {
-				$http.post("../brand/delete.do?ids="+$scope.selectIds ).success(
+				brandService.dele($scope.selectIds).success(
 						function (response) {
 							if (response.success) {
 								$scope.selectIds = []
@@ -108,7 +120,32 @@
 							}
 						}
 				)
+			};
+			//条件查询
+			$scope.searchEntity={};
+			$scope.search = function (page,rows) {
+				brandService.search(page,rows,$scope.searchEntity).success(
+						function (response) {
+							$scope.list = response.rows;
+							$scope.paginationConf.totalItems=response.total;
+						}
+				)
 			}
+
+			//分页控件配置
+			$scope.paginationConf = {
+				currentPage: 1,
+				totalItems: 10,
+				itemsPerPage: 10,
+				perPageOptions: [10, 20, 30, 40, 50],
+				onChange: function(){
+					$scope.reloadList();//重新加载
+				}
+			};
+			//加载数据
+			$scope.reloadList= function () {
+				$scope.search($scope.paginationConf.currentPage,$scope.paginationConf.itemsPerPage)
+			};
 		});
 
 	</script>
@@ -136,7 +173,7 @@
                             </div>
                             <div class="box-tools pull-right">
                                 <div class="has-feedback">
-							                                         
+									品牌名称：<input ng-model="searchEntity.name"> 品牌字母：<input ng-model="searchEntity.firstChar"> <button type="button" class="btn btn-default" ng-click="reloadList()">查询</button>
                                 </div>
                             </div>
                             <!--工具栏/-->
