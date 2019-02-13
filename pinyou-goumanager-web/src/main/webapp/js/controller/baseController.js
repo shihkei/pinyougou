@@ -1,4 +1,4 @@
-app.controller('baseController' ,function($scope,$http,brandService) {
+app.controller('baseController' ,function($scope,$http) {
 //分页控件配置
     $scope.paginationConf = {
         currentPage: 1,
